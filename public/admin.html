@@ -1,10 +1,19 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
+
 <head>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>لوحة الموقع</title>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  >
+
+  <title>لوحة الإدارة</title>
 
   <style>
+
     body {
       font-family: Arial, sans-serif;
       max-width: 700px;
@@ -13,31 +22,21 @@
       line-height: 1.7;
     }
 
-    input, button {
-      padding: 12px;
+    input,
+    button {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 13px;
+      margin-bottom: 10px;
       border-radius: 9px;
       border: 1px solid #ccc;
       font-size: 15px;
     }
 
-    input {
-      width: 100%;
-      box-sizing: border-box;
-      margin-bottom: 10px;
-    }
-
     button {
       background: #111;
-      color: #fff;
+      color: white;
       cursor: pointer;
-      width: 100%;
-    }
-
-    #map {
-      margin-top: 20px;
-      width: 100%;
-      min-height: 120px;
-      border-radius: 12px;
     }
 
     pre {
@@ -45,27 +44,30 @@
       background: #f3f3f3;
       padding: 15px;
       border-radius: 12px;
-      margin-top: 20px;
     }
 
     a {
       display: block;
-      margin-top: 15px;
-      padding: 12px;
-      text-align: center;
+      padding: 13px;
       background: #eee;
-      border-radius: 9px;
       color: #111;
       text-decoration: none;
+      text-align: center;
+      border-radius: 9px;
+      margin-top: 15px;
     }
+
   </style>
+
 </head>
 
 <body>
 
-  <h1>لوحة الموقع</h1>
+  <h1>لوحة الإدارة</h1>
 
-  <p>أدخل رمز الإدارة ثم اضغط تحديث.</p>
+  <p>
+    أدخل رمز الإدارة لعرض آخر موقع تمت مشاركته.
+  </p>
 
   <input
     id="token"
@@ -74,63 +76,115 @@
     autocomplete="off"
   >
 
-  <button onclick="loadLocation()">تحديث</button>
+  <button id="load">
+    تحديث
+  </button>
 
-  <pre id="out">لم يتم طلب الموقع بعد.</pre>
+  <pre id="out">
+لم يتم طلب الموقع بعد.
+  </pre>
 
   <div id="map"></div>
 
   <script>
+
+    const tokenInput =
+      document.getElementById('token');
+
+    const out =
+      document.getElementById('out');
+
+    const map =
+      document.getElementById('map');
+
+    document
+      .getElementById('load')
+      .addEventListener('click', loadLocation);
+
     async function loadLocation() {
-      const token = document.getElementById('token').value.trim();
-      const out = document.getElementById('out');
-      const map = document.getElementById('map');
+
+      const token =
+        tokenInput.value.trim();
 
       map.innerHTML = '';
 
       if (!token) {
-        out.textContent = 'أدخل رمز الإدارة أولاً.';
+
+        out.textContent =
+          'أدخل رمز الإدارة أولاً.';
+
         return;
       }
 
-      out.textContent = 'جاري جلب آخر موقع...';
+      out.textContent =
+        'جاري جلب آخر موقع...';
 
       try {
-        const response = await fetch(
-          '/api/location?token=' + encodeURIComponent(token)
-        );
 
-        const data = await response.json();
+        const response =
+          await fetch(
+            '/api/location?token=' +
+            encodeURIComponent(token)
+          );
+
+        const data =
+          await response.json();
 
         if (!response.ok) {
-          throw new Error(data.error || 'حدث خطأ.');
+
+          throw new Error(
+            data.error || 'حدث خطأ.'
+          );
+
         }
 
         if (data.message) {
-          out.textContent = data.message;
+
+          out.textContent =
+            data.message;
+
           return;
         }
 
         out.textContent =
-          `Latitude: ${data.latitude}\n` +
-          `Longitude: ${data.longitude}\n` +
-          `Accuracy: ±${Math.round(data.accuracy)} m\n` +
-          `Received: ${data.receivedAt}`;
+          'Latitude: ' +
+          data.latitude +
+          '\nLongitude: ' +
+          data.longitude +
+          '\nAccuracy: ±' +
+          Math.round(data.accuracy) +
+          ' m' +
+          '\nReceived: ' +
+          data.receivedAt;
 
         const url =
-          `https://www.openstreetmap.org/?mlat=${data.latitude}` +
-          `&mlon=${data.longitude}#map=17/${data.latitude}/${data.longitude}`;
+          'https://www.openstreetmap.org/?mlat=' +
+          data.latitude +
+          '&mlon=' +
+          data.longitude +
+          '#map=17/' +
+          data.latitude +
+          '/' +
+          data.longitude;
 
         map.innerHTML =
-          `<a href="${url}" target="_blank" rel="noopener">
-             📍 فتح الموقع على الخريطة
-           </a>`;
+          '<a href="' +
+          url +
+          '" target="_blank" rel="noopener">' +
+          '📍 فتح الموقع على الخريطة' +
+          '</a>';
 
       } catch (error) {
-        out.textContent = error.message;
+
+        out.textContent =
+          error.message;
+
       }
+
     }
+
   </script>
 
 </body>
+
 </html>
