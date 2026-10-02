@@ -1,2 +1,136 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>لوحة الموقع</title>
 
-<!doctype html><html lang="ar" dir="rtl"><meta name="viewport" content="width=device-width,initial-scale=1"><title>لوحة الموقع</title><style>body{font-family:Arial,sans-serif;max-width:700px;margin:40px auto;padding:20px}input,button{padding:12px;border-radius:9px;border:1px solid #ccc}button{background:#111;color:#fff;cursor:pointer}#map{margin-top:20px;width:100%;height:320px;border:0;border-radius:12px}pre{white-space:pre-wrap}</style><h1>لوحة الموقع</h1><p>أدخل رمز الإدارة ثم اضغط تحديث.</p><input id="token" type="password" placeholder="Admin token"><button onclick="load()">تحديث</button><pre id="out"></pre><div id="map"></div><script>async function load(){const t=document.getElementById('token').value;const o=document.getElementById('out');try{const r=await fetch('/api/location?token='+encodeURIComponent(t));const d=await r.json();if(!r.ok)throw Error(d.error);if(d.message){o.textContent=d.message;return}o.textContent=`Latitude: ${d.latitude}\nLongitude: ${d.longitude}\nAccuracy: ±${Math.round(d.accuracy)} m\nReceived: ${d.receivedAt}`;document.getElementById('map').innerHTML=`<a target="_blank" href="https://www.openstreetmap.org/?mlat=${d.latitude}&mlon=${d.longitude}#map=17/${d.latitude}/${d.longitude}">فتح الموقع على OpenStreetMap</a>`}catch(e){o.textContent=e.message}}</script></html>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 700px;
+      margin: 40px auto;
+      padding: 20px;
+      line-height: 1.7;
+    }
+
+    input, button {
+      padding: 12px;
+      border-radius: 9px;
+      border: 1px solid #ccc;
+      font-size: 15px;
+    }
+
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      margin-bottom: 10px;
+    }
+
+    button {
+      background: #111;
+      color: #fff;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    #map {
+      margin-top: 20px;
+      width: 100%;
+      min-height: 120px;
+      border-radius: 12px;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      background: #f3f3f3;
+      padding: 15px;
+      border-radius: 12px;
+      margin-top: 20px;
+    }
+
+    a {
+      display: block;
+      margin-top: 15px;
+      padding: 12px;
+      text-align: center;
+      background: #eee;
+      border-radius: 9px;
+      color: #111;
+      text-decoration: none;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>لوحة الموقع</h1>
+
+  <p>أدخل رمز الإدارة ثم اضغط تحديث.</p>
+
+  <input
+    id="token"
+    type="password"
+    placeholder="Admin token"
+    autocomplete="off"
+  >
+
+  <button onclick="loadLocation()">تحديث</button>
+
+  <pre id="out">لم يتم طلب الموقع بعد.</pre>
+
+  <div id="map"></div>
+
+  <script>
+    async function loadLocation() {
+      const token = document.getElementById('token').value.trim();
+      const out = document.getElementById('out');
+      const map = document.getElementById('map');
+
+      map.innerHTML = '';
+
+      if (!token) {
+        out.textContent = 'أدخل رمز الإدارة أولاً.';
+        return;
+      }
+
+      out.textContent = 'جاري جلب آخر موقع...';
+
+      try {
+        const response = await fetch(
+          '/api/location?token=' + encodeURIComponent(token)
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'حدث خطأ.');
+        }
+
+        if (data.message) {
+          out.textContent = data.message;
+          return;
+        }
+
+        out.textContent =
+          `Latitude: ${data.latitude}\n` +
+          `Longitude: ${data.longitude}\n` +
+          `Accuracy: ±${Math.round(data.accuracy)} m\n` +
+          `Received: ${data.receivedAt}`;
+
+        const url =
+          `https://www.openstreetmap.org/?mlat=${data.latitude}` +
+          `&mlon=${data.longitude}#map=17/${data.latitude}/${data.longitude}`;
+
+        map.innerHTML =
+          `<a href="${url}" target="_blank" rel="noopener">
+             📍 فتح الموقع على الخريطة
+           </a>`;
+
+      } catch (error) {
+        out.textContent = error.message;
+      }
+    }
+  </script>
+
+</body>
+</html>
