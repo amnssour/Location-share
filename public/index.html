@@ -1,1 +1,244 @@
-<!doctype html><html lang="ar" dir="rtl"><meta name="viewport" content="width=device-width,initial-scale=1"><title>مشاركة الموقع</title><style>body{font-family:Arial,sans-serif;max-width:600px;margin:40px auto;padding:20px;line-height:1.7}button{padding:13px 18px;border:0;border-radius:10px;background:#111;color:#fff;font-size:16px}#out{margin-top:18px;padding:15px;background:#f3f3f3;border-radius:12px}</style><h1>مشاركة الموقع</h1><p>بالضغط على الزر أدناه، سيطلب المتصفح إذنك لمشاركة موقعك الجغرافي. عند السماح، سيتم إرسال الإحداثيات إلى صاحب هذه الصفحة.</p><button id="btn">السماح بمشاركة موقعي</button><div id="out"></div><script>const out=document.getElementById('out');document.getElementById('btn').onclick=()=>{if(!navigator.geolocation){out.textContent='هذا المتصفح لا يدعم تحديد الموقع.';return}out.textContent='جاري طلب الإذن...';navigator.geolocation.getCurrentPosition(async p=>{const x=p.coords;try{await fetch('/api/location',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({latitude:x.latitude,longitude:x.longitude,accuracy:x.accuracy})});out.innerHTML='تمت مشاركة موقعك بنجاح.'}catch(e){out.textContent='تعذر إرسال الموقع.'}},e=>{out.textContent='لم تتم مشاركة الموقع: '+e.message},{enableHighAccuracy:true,timeout:15000,maximumAge:0})}</script></html>
+<!doctype html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+
+  <title>مشاركة الموقع</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 20px;
+      line-height: 1.8;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      border: 0;
+      border-radius: 10px;
+      background: #111;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+    }
+
+    #out {
+      margin-top: 18px;
+      padding: 15px;
+      background: #f3f3f3;
+      border-radius: 12px;
+      white-space: pre-wrap;
+    }
+
+    .small {
+      font-size: 14px;
+      color: #555;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>مشاركة الموقع</h1>
+
+  <p>
+    سيتم طلب إذنك لمشاركة موقع جهازك.
+    لن يتم إرسال موقعك إلا بعد موافقتك على طلب الموقع الذي يظهره المتصفح.
+  </p>
+
+  <button id="btn">
+    السماح بمشاركة موقعي
+  </button>
+
+  <div id="out">
+    اضغط على الزر للبدء.
+  </div>
+
+  <p class="small">
+    يمكنك رفض مشاركة موقعك في أي وقت.
+  </p>
+
+  <script>
+
+    const btn = document.getElementById('btn');
+    const out = document.getElementById('out');
+
+    function show(message) {
+      out.textContent = message;
+    }
+
+    async function checkPermission() {
+
+      if (!navigator.permissions) {
+        return 'unknown';
+      }
+
+      try {
+        const permission =
+          await navigator.permissions.query({
+            name: 'geolocation'
+          });
+
+        return permission.state;
+
+      } catch (e) {
+        return 'unknown';
+      }
+    }
+
+    async function requestLocation() {
+
+      if (!window.isSecureContext) {
+        show(
+          'هذا الموقع يجب أن يعمل عبر HTTPS حتى يستطيع المتصفح استخدام تحديد الموقع.'
+        );
+        return;
+      }
+
+      if (!navigator.geolocation) {
+        show(
+          'هذا المتصفح لا يدعم تحديد الموقع.'
+        );
+        return;
+      }
+
+      const permission = await checkPermission();
+
+      if (permission === 'denied') {
+
+        show(
+          'تم رفض إذن الموقع لهذا الموقع في المتصفح.\n\n' +
+          'افتح إعدادات أذونات الموقع لهذا الرابط واختر السماح، ' +
+          'ثم أعد تحميل الصفحة.'
+        );
+
+        return;
+      }
+
+      btn.disabled = true;
+
+      show(
+        'سيظهر الآن طلب إذن الموقع من المتصفح...'
+      );
+
+      navigator.geolocation.getCurrentPosition(
+
+        async function(position) {
+
+          try {
+
+            const coords = position.coords;
+
+            show(
+              'تم الحصول على الموقع.\n' +
+              'جاري إرساله...'
+            );
+
+            const response = await fetch(
+              '/api/location',
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  latitude: coords.latitude,
+                  longitude: coords.longitude,
+                  accuracy: coords.accuracy
+                })
+              }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+              throw new Error(
+                data.error || 'فشل إرسال الموقع.'
+              );
+            }
+
+            show(
+              'تمت مشاركة موقعك بنجاح.'
+            );
+
+          } catch (error) {
+
+            show(
+              'تم الحصول على الموقع، لكن تعذر إرساله إلى الخادم.\n\n' +
+              error.message
+            );
+
+          } finally {
+
+            btn.disabled = false;
+
+          }
+        },
+
+        function(error) {
+
+          let message;
+
+          if (error.code === 1) {
+
+            message =
+              'تم رفض إذن الموقع.\n\n' +
+              'إذا لم تظهر نافذة الإذن، افتح أذونات الموقع لهذا الموقع في المتصفح واختر السماح.';
+
+          } else if (error.code === 2) {
+
+            message =
+              'تعذر تحديد الموقع.\n\n' +
+              'تأكد من تشغيل خدمة الموقع GPS في الهاتف وحاول مرة أخرى.';
+
+          } else if (error.code === 3) {
+
+            message =
+              'انتهت مهلة تحديد الموقع.\n\n' +
+              'تأكد من تشغيل GPS والاتصال بالإنترنت وحاول مرة أخرى.';
+
+          } else {
+
+            message =
+              'حدث خطأ أثناء تحديد الموقع.\n\n' +
+              error.message;
+          }
+
+          show(message);
+
+          btn.disabled = false;
+
+        },
+
+        {
+          enableHighAccuracy: true,
+          timeout: 30000,
+          maximumAge: 0
+        }
+
+      );
+    }
+
+    btn.addEventListener(
+      'click',
+      requestLocation
+    );
+
+  </script>
+
+</body>
+
+</html>
