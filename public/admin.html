@@ -1,151 +1,599 @@
-<!doctype html>
-<html lang="ar" dir="rtl">
-
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="dark">
 <head>
-
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QuantumCore Systems | لوحة الإدارة المشفرة</title>
+  
+  <!-- Google Fonts: Tajawal & Fira Code -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Leaflet CSS & JS for Interactive Map Embed -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <meta
-    name="viewport"
-    content="width=device-width,initial-scale=1"
-  >
-
-  <title>لوحة الإدارة</title>
+  <!-- Tailwind Configuration -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            cyber: {
+              black: '#030712',
+              dark: '#0B0F19',
+              card: 'rgba(17, 24, 39, 0.75)',
+              border: 'rgba(34, 211, 238, 0.2)',
+              cyan: '#06b6d4',
+              glow: '#22d3ee',
+              purple: '#a855f7',
+              pink: '#ec4899',
+            }
+          },
+          fontFamily: {
+            sans: ['Tajawal', 'sans-serif'],
+            mono: ['Fira Code', 'monospace'],
+          },
+          boxShadow: {
+            'neon-cyan': '0 0 20px rgba(34, 211, 238, 0.35)',
+            'neon-purple': '0 0 20px rgba(168, 85, 247, 0.35)',
+          }
+        }
+      }
+    }
+  </script>
 
   <style>
-
+    /* Custom Styling & Sci-Fi Effects */
     body {
-      font-family: Arial, sans-serif;
-      max-width: 700px;
-      margin: 40px auto;
-      padding: 20px;
-      line-height: 1.7;
+      background-color: #030712;
+      color: #f3f4f6;
+      font-family: 'Tajawal', sans-serif;
+      overflow-x: hidden;
     }
 
-    input,
-    button {
-      width: 100%;
-      box-sizing: border-box;
-      padding: 13px;
-      margin-bottom: 10px;
-      border-radius: 9px;
-      border: 1px solid #ccc;
-      font-size: 15px;
+    /* Grid Overlay background */
+    .cyber-grid {
+      background-image: 
+        linear-gradient(to right, rgba(34, 211, 238, 0.05) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(34, 211, 238, 0.05) 1px, transparent 1px);
+      background-size: 40px 40px;
     }
 
-    button {
-      background: #111;
-      color: white;
-      cursor: pointer;
+    /* Scanline Effect */
+    .scanline {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none;
+      background: linear-gradient(
+        to bottom,
+        rgba(255,255,255,0),
+        rgba(255,255,255,0) 50%,
+        rgba(0, 0, 0, 0.25) 50%,
+        rgba(0, 0, 0, 0.25)
+      );
+      background-size: 100% 4px;
+      z-index: 50;
+      opacity: 0.6;
     }
 
-    pre {
-      white-space: pre-wrap;
-      background: #f3f3f3;
-      padding: 15px;
-      border-radius: 12px;
+    /* Glassmorphism Cards */
+    .glass-card {
+      background: rgba(11, 15, 25, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(34, 211, 238, 0.2);
     }
 
-    a {
-      display: block;
-      padding: 13px;
-      background: #eee;
-      color: #111;
-      text-decoration: none;
-      text-align: center;
-      border-radius: 9px;
-      margin-top: 15px;
+    /* Pulse animations */
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 15px rgba(34, 211, 238, 0.2); }
+      50% { box-shadow: 0 0 25px rgba(34, 211, 238, 0.5); }
+    }
+    .pulse-glow-box {
+      animation: pulse-glow 3s infinite ease-in-out;
     }
 
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #030712;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 4px;
+      border: 1px solid rgba(34, 211, 238, 0.3);
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #06b6d4;
+    }
+
+    /* Leaflet Dark Theme Adjustments */
+    .leaflet-container {
+      background: #0b0f19 !important;
+      border-radius: 0.75rem;
+    }
   </style>
-
 </head>
 
-<body>
+<body class="cyber-grid min-h-screen flex flex-col justify-between relative selection:bg-cyan-500 selection:text-black">
+  
+  <!-- Sci-Fi Canvas Background -->
+  <canvas id="particleCanvas" class="fixed inset-0 pointer-events-none z-0 opacity-40"></canvas>
+  
+  <!-- CRT Scanline overlay -->
+  <div class="scanline"></div>
 
-  <h1>لوحة الإدارة</h1>
+  <!-- Main Container -->
+  <div class="relative z-10 flex-grow flex flex-col">
+    
+    <!-- Header / Branding Navigation Bar -->
+    <header class="border-b border-cyber-border bg-black/60 backdrop-blur-md sticky top-0 z-40 px-4 py-3">
+      <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+        
+        <!-- Logo & Domain Info -->
+        <div class="flex items-center gap-3">
+          <div class="relative flex items-center justify-center w-10 h-10 rounded-xl bg-cyan-950/80 border border-cyan-500/50 text-cyan-400 text-xl font-bold shadow-neon-cyan">
+            <i class="fa-solid fa-atom animate-spin-slow"></i>
+            <span class="absolute -top-1 -right-1 flex h-3 w-3">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-3 w-3 bg-cyan-500"></span>
+            </span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="font-bold text-xl tracking-wider text-white">QUANTUMCORE</h1>
+              <span class="text-xs px-2 py-0.5 rounded bg-cyan-950 border border-cyan-500/40 text-cyan-300 font-mono">SYSTEMS</span>
+            </div>
+            <p class="text-xs font-mono text-cyan-400/70">quantumcore.online // SECURE_NODE_v4.8</p>
+          </div>
+        </div>
 
-  <p>
-    أدخل رمز الإدارة لعرض آخر موقع تمت مشاركته.
-  </p>
+        <!-- Live Status Indicators -->
+        <div class="flex flex-wrap items-center gap-3 font-mono text-xs">
+          <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-900/80 border border-gray-800 text-gray-300">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>الشبكة: <span class="text-emerald-400">نشطة</span></span>
+          </div>
 
-  <input
-    id="token"
-    type="password"
-    placeholder="Admin token"
-    autocomplete="off"
-  >
+          <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-900/80 border border-gray-800 text-gray-300">
+            <i class="fa-solid fa-lock text-cyan-400"></i>
+            <span>تشفير TLS 1.3</span>
+          </div>
 
-  <button id="load">
-    تحديث
-  </button>
+          <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-900/80 border border-gray-800 text-gray-300">
+            <i class="fa-solid fa-bolt text-purple-400"></i>
+            <span>استجابة: <span id="pingCounter" class="text-purple-300">24ms</span></span>
+          </div>
+        </div>
 
-  <pre id="out">
-لم يتم طلب الموقع بعد.
-  </pre>
+      </div>
+    </header>
 
-  <div id="map"></div>
+    <!-- Main Content Grid -->
+    <main class="max-w-7xl mx-auto w-full p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 flex-grow">
+      
+      <!-- Left Column: Controls & Credentials -->
+      <section class="lg:col-span-5 flex flex-col gap-6">
+        
+        <!-- Auth & Control Panel Card -->
+        <div class="glass-card rounded-2xl p-5 border border-cyan-500/30 shadow-neon-cyan relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-24 h-24 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none"></div>
+          
+          <div class="flex items-center justify-between mb-4 pb-3 border-b border-gray-800">
+            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-key text-cyan-400"></i>
+              <span>التحقق والتحكم بالإدارة</span>
+            </h2>
+            <span class="text-xs text-gray-400 font-mono">AUTH_STAGE_1</span>
+          </div>
+
+          <p class="text-sm text-gray-400 mb-4 leading-relaxed">
+            أدخل رمز الإدارة (Admin Token) المصرح به للاتصال بالسيرفر وجلب آخر إحداثيات موقع للمُشارك.
+          </p>
+
+          <!-- Input Group -->
+          <div class="space-y-4">
+            <div>
+              <label for="token" class="block text-xs font-mono text-gray-300 mb-1">رمز الإدارة (ADMIN TOKEN)</label>
+              <div class="relative">
+                <input
+                  id="token"
+                  type="password"
+                  placeholder="أدخل الرمز التشفيري هنا..."
+                  autocomplete="off"
+                  class="w-full bg-black/60 border border-cyan-500/40 rounded-xl px-4 py-3 text-sm text-cyan-200 placeholder-gray-600 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all font-mono"
+                >
+                <button
+                  type="button"
+                  id="toggleTokenVisibility"
+                  class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-cyan-400 transition-colors p-1"
+                  title="إظهار/إخفاء الرمز"
+                >
+                  <i class="fa-solid fa-eye" id="eyeIcon"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Settings / Toggles -->
+            <div class="flex flex-wrap items-center justify-between gap-3 pt-2 text-xs text-gray-300">
+              <label class="flex items-center gap-2 cursor-pointer select-none">
+                <input type="checkbox" id="saveTokenCheck" class="rounded bg-black border-cyan-500/50 text-cyan-500 focus:ring-0">
+                <span>حفظ الرمز محلياً</span>
+              </label>
+
+              <label class="flex items-center gap-2 cursor-pointer select-none">
+                <input type="checkbox" id="autoRefreshCheck" class="rounded bg-black border-cyan-500/50 text-cyan-500 focus:ring-0">
+                <span>تحديث تلقائي (30 ثانية)</span>
+              </label>
+            </div>
+
+            <!-- Action Button -->
+            <button
+              id="load"
+              class="w-full relative group overflow-hidden bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-3 border border-cyan-400/40"
+            >
+              <i class="fa-solid fa-arrows-rotate text-lg group-hover:rotate-180 transition-transform duration-500" id="btnIcon"></i>
+              <span id="btnText" class="tracking-wide">تحديث البيانات الآن</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- System Output Metrics & Details -->
+        <div class="glass-card rounded-2xl p-5 border border-purple-500/30 flex-grow flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-4 pb-3 border-b border-gray-800">
+              <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-terminal text-purple-400"></i>
+                <span>بيانات الموقع المستلمة</span>
+              </h2>
+              <button id="copyDataBtn" class="text-xs text-purple-400 hover:text-purple-300 bg-purple-950/60 hover:bg-purple-900 border border-purple-500/40 px-2.5 py-1 rounded-md transition-all flex items-center gap-1.5" title="نسخ النص">
+                <i class="fa-solid fa-copy"></i>
+                <span>نسخ</span>
+              </button>
+            </div>
+
+            <!-- Formatted Output Display -->
+            <div class="bg-black/70 border border-gray-800 rounded-xl p-4 font-mono text-sm leading-relaxed text-gray-200 relative min-h-[140px] overflow-x-auto">
+              <!-- Original 'out' element required for logic -->
+              <pre id="out" class="font-mono text-sm whitespace-pre-wrap text-cyan-300">لم يتم طلب الموقع بعد.</pre>
+            </div>
+          </div>
+
+          <!-- Structured Quick Metrics Display -->
+          <div id="quickMetrics" class="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-gray-800/80 text-center text-xs">
+            <div class="bg-gray-900/60 p-2 rounded-lg border border-gray-800">
+              <span class="block text-gray-500 text-[10px] mb-0.5">خط العرض</span>
+              <span id="metricLat" class="font-mono font-bold text-cyan-400">--</span>
+            </div>
+            <div class="bg-gray-900/60 p-2 rounded-lg border border-gray-800">
+              <span class="block text-gray-500 text-[10px] mb-0.5">خط الطول</span>
+              <span id="metricLon" class="font-mono font-bold text-cyan-400">--</span>
+            </div>
+            <div class="bg-gray-900/60 p-2 rounded-lg border border-gray-800">
+              <span class="block text-gray-500 text-[10px] mb-0.5">الدقة</span>
+              <span id="metricAcc" class="font-mono font-bold text-purple-400">--</span>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Right Column: Interactive Map & History -->
+      <section class="lg:col-span-7 flex flex-col gap-6">
+        
+        <!-- Map Visualization Box -->
+        <div class="glass-card rounded-2xl p-5 border border-cyan-500/30 flex-grow flex flex-col">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-4 pb-3 border-b border-gray-800">
+            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-map-location-dot text-cyan-400"></i>
+              <span>الخريطة والموقع الجغرافي</span>
+            </h2>
+
+            <!-- External Links Options -->
+            <div id="externalMapLinks" class="flex items-center gap-2">
+              <span class="text-xs text-gray-500">خارجي:</span>
+              <div id="map"></div> <!-- Original #map container -->
+            </div>
+          </div>
+
+          <!-- Embedded Interactive Leaflet Canvas -->
+          <div id="leafletMap" class="w-full h-72 md:h-96 rounded-xl border border-gray-800 overflow-hidden relative">
+            <div id="mapPlaceholder" class="absolute inset-0 bg-gray-950 flex flex-col items-center justify-center text-gray-500 p-4 text-center z-10">
+              <i class="fa-solid fa-compass text-4xl mb-3 text-gray-700 animate-pulse"></i>
+              <p class="text-sm">في انتظار جلب البيانات لإظهار موقع الخريطة التفاعلية...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- History Log Card -->
+        <div class="glass-card rounded-2xl p-5 border border-gray-800">
+          <div class="flex items-center justify-between mb-3 pb-2 border-b border-gray-800">
+            <h3 class="text-sm font-bold text-gray-200 flex items-center gap-2">
+              <i class="fa-solid fa-clock-rotate-left text-gray-400"></i>
+              <span>سجل الاستعلامات الأخيرة</span>
+            </h3>
+            <button id="clearHistoryBtn" class="text-[11px] text-gray-500 hover:text-red-400 transition-colors">
+              مسح السجل
+            </button>
+          </div>
+
+          <div class="overflow-x-auto max-h-40 overflow-y-auto">
+            <table class="w-full text-right font-mono text-xs text-gray-300">
+              <thead class="bg-gray-900/80 text-gray-400 sticky top-0">
+                <tr>
+                  <th class="p-2 rounded-r-lg">الوقت</th>
+                  <th class="p-2">الإحداثيات</th>
+                  <th class="p-2">الدقة</th>
+                  <th class="p-2 rounded-l-lg">الحالة</th>
+                </tr>
+              </thead>
+              <tbody id="historyTableBody">
+                <tr class="border-b border-gray-800/50">
+                  <td colspan="4" class="p-3 text-center text-gray-600 font-sans">لا توجد سجلات سابقة متوفرة حالياً.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- Footer Status Banner -->
+    <footer class="border-t border-gray-900 bg-black/80 px-4 py-3 text-xs text-gray-500">
+      <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-cyan-500"></span>
+          <span>الموقع الرسمي: <a href="https://quantumcore.online" class="text-cyan-400 hover:underline">quantumcore.online</a></span>
+        </div>
+        <div>
+          <span>جميع الحقوق محفوظة &copy; 2026 QuantumCore Systems</span>
+        </div>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- Notification Toast Container -->
+  <div id="toastContainer" class="fixed bottom-5 left-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
   <script>
+    // --- 1. Canvas Sci-Fi Particle System ---
+    const canvas = document.getElementById('particleCanvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
 
-    const tokenInput =
-      document.getElementById('token');
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
 
-    const out =
-      document.getElementById('out');
+    class Particle {
+      constructor() {
+        this.reset();
+      }
+      reset() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.size = Math.random() * 2 + 0.5;
+        this.speedX = (Math.random() - 0.5) * 0.5;
+        this.speedY = (Math.random() - 0.5) * 0.5;
+        this.opacity = Math.random() * 0.5 + 0.2;
+      }
+      update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) {
+          this.reset();
+        }
+      }
+      draw() {
+        ctx.fillStyle = `rgba(34, 211, 238, ${this.opacity})`;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
 
-    const map =
-      document.getElementById('map');
+    for (let i = 0; i < 45; i++) {
+      particles.push(new Particle());
+    }
 
-    document
-      .getElementById('load')
-      .addEventListener('click', loadLocation);
+    function animateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw subtle connecting lines
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 120) {
+            ctx.strokeStyle = `rgba(34, 211, 238, ${0.15 * (1 - dist / 120)})`;
+            ctx.lineWidth = 0.5;
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.stroke();
+          }
+        }
+      }
 
+      particles.forEach(p => {
+        p.update();
+        p.draw();
+      });
+      requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+
+    // --- 2. Leaflet Map Initialization ---
+    let leafletMapInstance = null;
+    let currentMarker = null;
+
+    function initOrUpdateLeafletMap(lat, lon, acc) {
+      document.getElementById('mapPlaceholder').style.display = 'none';
+      const mapContainer = document.getElementById('leafletMap');
+
+      if (!leafletMapInstance) {
+        leafletMapInstance = L.map(mapContainer, {
+          zoomControl: false
+        }).setView([lat, lon], 16);
+
+        // Dark-themed tiles from CartoDB
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+          attribution: '&copy; OpenStreetMap &copy; CARTO',
+          subdomains: 'abcd',
+          maxZoom: 19
+        }).addTo(leafletMapInstance);
+
+        L.control.zoom({ position: 'bottomright' }).addTo(leafletMapInstance);
+      } else {
+        leafletMapInstance.setView([lat, lon], 16);
+      }
+
+      if (currentMarker) {
+        leafletMapInstance.removeLayer(currentMarker);
+      }
+
+      // Glowing custom icon
+      const customIcon = L.divIcon({
+        className: 'custom-leaflet-marker',
+        html: `<div class="w-6 h-6 rounded-full bg-cyan-400 border-2 border-white shadow-neon-cyan animate-pulse"></div>`,
+        iconSize: [24, 24],
+        iconAnchor: [12, 12]
+      });
+
+      currentMarker = L.marker([lat, lon], { icon: customIcon }).addTo(leafletMapInstance);
+      currentMarker.bindPopup(`<div class="text-xs font-mono text-black"><b>الإحداثيات:</b><br>${lat}, ${lon}</div>`).openPopup();
+    }
+
+    // --- 3. Core Application Logic (Preserving & Extending Original JS) ---
+    const tokenInput = document.getElementById('token');
+    const out = document.getElementById('out');
+    const map = document.getElementById('map');
+    const loadBtn = document.getElementById('load');
+    
+    // Additional UI Elements
+    const metricLat = document.getElementById('metricLat');
+    const metricLon = document.getElementById('metricLon');
+    const metricAcc = document.getElementById('metricAcc');
+    const saveTokenCheck = document.getElementById('saveTokenCheck');
+    const autoRefreshCheck = document.getElementById('autoRefreshCheck');
+    const historyTableBody = document.getElementById('historyTableBody');
+    let autoRefreshTimer = null;
+    let historyLogs = JSON.parse(localStorage.getItem('qc_history') || '[]');
+
+    // Load stored token if exists
+    const storedToken = localStorage.getItem('qc_admin_token');
+    if (storedToken) {
+      tokenInput.value = storedToken;
+      saveTokenCheck.checked = true;
+    }
+
+    // Toggle Password Visibility
+    document.getElementById('toggleTokenVisibility').addEventListener('click', () => {
+      const eyeIcon = document.getElementById('eyeIcon');
+      if (tokenInput.type === 'password') {
+        tokenInput.type = 'text';
+        eyeIcon.classList.replace('fa-eye', 'fa-eye-slash');
+      } else {
+        tokenInput.type = 'password';
+        eyeIcon.classList.replace('fa-eye-slash', 'fa-eye');
+      }
+    });
+
+    // Save token checkbox listener
+    saveTokenCheck.addEventListener('change', () => {
+      if (saveTokenCheck.checked) {
+        localStorage.setItem('qc_admin_token', tokenInput.value);
+      } else {
+        localStorage.removeItem('qc_admin_token');
+      }
+    });
+
+    tokenInput.addEventListener('input', () => {
+      if (saveTokenCheck.checked) {
+        localStorage.setItem('qc_admin_token', tokenInput.value);
+      }
+    });
+
+    // Auto Refresh Listener
+    autoRefreshCheck.addEventListener('change', () => {
+      if (autoRefreshCheck.checked) {
+        showToast('تم تفعيل التحديث التلقائي كل 30 ثانية', 'info');
+        autoRefreshTimer = setInterval(() => {
+          loadLocation();
+        }, 30000);
+      } else {
+        showToast('تم إيقاف التحديث التلقائي', 'info');
+        clearInterval(autoRefreshTimer);
+      }
+    });
+
+    // Copy formatted output
+    document.getElementById('copyDataBtn').addEventListener('click', () => {
+      const textToCopy = out.textContent;
+      if (textToCopy && textToCopy !== 'لم يتم طلب الموقع بعد.') {
+        navigator.clipboard.writeText(textToCopy).then(() => {
+          showToast('تم نسخ بيانات الموقع إلى الحافظة!', 'success');
+        });
+      }
+    });
+
+    // Attach click listener to load button
+    loadBtn.addEventListener('click', loadLocation);
+
+    // Main Location Fetching Function (Preserving provided logic + enhancements)
     async function loadLocation() {
-
-      const token =
-        tokenInput.value.trim();
-
+      const token = tokenInput.value.trim();
       map.innerHTML = '';
 
       if (!token) {
-
-        out.textContent =
-          'أدخل رمز الإدارة أولاً.';
-
+        out.textContent = 'أدخل رمز الإدارة أولاً.';
+        showToast('تنبيه: يجب إدخال رمز الإدارة!', 'warning');
         return;
       }
 
-      out.textContent =
-        'جاري جلب آخر موقع...';
+      // UI Loading state
+      setLoadingState(true);
+      out.textContent = 'جاري جلب آخر موقع...';
 
       try {
+        const response = await fetch(
+          '/api/location?token=' + encodeURIComponent(token)
+        );
 
-        const response =
-          await fetch(
-            '/api/location?token=' +
-            encodeURIComponent(token)
-          );
-
-        const data =
-          await response.json();
+        const data = await response.json();
 
         if (!response.ok) {
-
-          throw new Error(
-            data.error || 'حدث خطأ.'
-          );
-
+          throw new Error(data.error || 'حدث خطأ في الاتصال بالسيرفر.');
         }
 
         if (data.message) {
-
-          out.textContent =
-            data.message;
-
+          out.textContent = data.message;
+          metricLat.textContent = '--';
+          metricLon.textContent = '--';
+          metricAcc.textContent = '--';
           return;
         }
 
+        // Display Formatted Output
         out.textContent =
           'Latitude: ' +
           data.latitude +
@@ -157,6 +605,12 @@
           '\nReceived: ' +
           data.receivedAt;
 
+        // Update Quick Metrics
+        metricLat.textContent = Number(data.latitude).toFixed(4);
+        metricLon.textContent = Number(data.longitude).toFixed(4);
+        metricAcc.textContent = `±${Math.round(data.accuracy)}m`;
+
+        // Generate OpenStreetMap Link (as per provided code)
         const url =
           'https://www.openstreetmap.org/?mlat=' +
           data.latitude +
@@ -170,21 +624,118 @@
         map.innerHTML =
           '<a href="' +
           url +
-          '" target="_blank" rel="noopener">' +
+          '" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-950/80 border border-cyan-500/40 text-cyan-300 text-xs font-semibold hover:bg-cyan-900 transition-all shadow-neon-cyan">' +
           '📍 فتح الموقع على الخريطة' +
           '</a>';
 
+        // Render Leaflet Dark Map Embed
+        initOrUpdateLeafletMap(data.latitude, data.longitude, data.accuracy);
+
+        // Add to history table
+        addToHistory(data);
+        showToast('تم تحديث بيانات الموقع بنجاح!', 'success');
+
       } catch (error) {
-
-        out.textContent =
-          error.message;
-
+        out.textContent = error.message;
+        showToast(`خطأ: ${error.message}`, 'error');
+      } finally {
+        setLoadingState(false);
       }
-
     }
 
+    // UI Helper Functions
+    function setLoadingState(isLoading) {
+      const btnIcon = document.getElementById('btnIcon');
+      const btnText = document.getElementById('btnText');
+      if (isLoading) {
+        btnIcon.className = 'fa-solid fa-spinner animate-spin text-lg';
+        btnText.textContent = 'جاري الاتصال...';
+        loadBtn.disabled = true;
+      } else {
+        btnIcon.className = 'fa-solid fa-arrows-rotate text-lg group-hover:rotate-180 transition-transform duration-500';
+        btnText.textContent = 'تحديث البيانات الآن';
+        loadBtn.disabled = false;
+      }
+    }
+
+    function addToHistory(data) {
+      const record = {
+        time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        coords: `${Number(data.latitude).toFixed(3)}, ${Number(data.longitude).toFixed(3)}`,
+        acc: `±${Math.round(data.accuracy)}m`,
+        raw: data
+      };
+
+      historyLogs.unshift(record);
+      if (historyLogs.length > 8) historyLogs.pop();
+      localStorage.setItem('qc_history', JSON.stringify(historyLogs));
+      renderHistoryTable();
+    }
+
+    function renderHistoryTable() {
+      if (historyLogs.length === 0) {
+        historyTableBody.innerHTML = `
+          <tr class="border-b border-gray-800/50">
+            <td colspan="4" class="p-3 text-center text-gray-600 font-sans">لا توجد سجلات سابقة متوفرة حالياً.</td>
+          </tr>
+        `;
+        return;
+      }
+
+      historyTableBody.innerHTML = historyLogs.map(item => `
+        <tr class="border-b border-gray-800/50 hover:bg-gray-900/50 transition-colors">
+          <td class="p-2 text-cyan-300">${item.time}</td>
+          <td class="p-2 font-bold">${item.coords}</td>
+          <td class="p-2 text-purple-300">${item.acc}</td>
+          <td class="p-2"><span class="px-1.5 py-0.5 rounded text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-500/30">ناجح</span></td>
+        </tr>
+      `).join('');
+    }
+
+    document.getElementById('clearHistoryBtn').addEventListener('click', () => {
+      historyLogs = [];
+      localStorage.removeItem('qc_history');
+      renderHistoryTable();
+      showToast('تم مسح سجل الاستعلامات.', 'info');
+    });
+
+    // Toast Notification System
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      
+      const colors = {
+        success: 'border-emerald-500 text-emerald-300 bg-gray-950/90',
+        error: 'border-red-500 text-red-300 bg-gray-950/90',
+        warning: 'border-amber-500 text-amber-300 bg-gray-950/90',
+        info: 'border-cyan-500 text-cyan-300 bg-gray-950/90',
+      };
+
+      toast.className = `pointer-events-auto flex items-center gap-2 border px-4 py-2.5 rounded-xl shadow-xl backdrop-blur-md text-xs font-sans transition-all duration-300 transform translate-y-2 opacity-0 ${colors[type]}`;
+      toast.innerHTML = `
+        <i class="fa-solid ${type === 'success' ? 'fa-circle-check' : type === 'error' ? 'fa-triangle-exclamation' : 'fa-circle-info'}"></i>
+        <span>${message}</span>
+      `;
+
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      }, 10);
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    // Ping counter simulation for sci-fi atmosphere
+    setInterval(() => {
+      const pingVal = Math.floor(Math.random() * 12) + 18;
+      document.getElementById('pingCounter').textContent = `${pingVal}ms`;
+    }, 4000);
+
+    // Initial render of saved history
+    renderHistoryTable();
   </script>
-
 </body>
-
-</html>
+  </html>
