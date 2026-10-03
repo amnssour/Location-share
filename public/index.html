@@ -1,96 +1,363 @@
-<!doctype html>
-<html lang="ar" dir="rtl">
-
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QuantumCore Systems | مشاركة الموقع الجغرافي</title>
+  
+  <!-- Google Fonts: Tajawal & Fira Code -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-  <title>مشاركة الموقع</title>
+  <!-- Tailwind Configuration -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            cyber: {
+              black: '#030712',
+              dark: '#0B0F19',
+              card: 'rgba(17, 24, 39, 0.8)',
+              border: 'rgba(34, 211, 238, 0.25)',
+              cyan: '#06b6d4',
+              glow: '#22d3ee',
+              purple: '#a855f7',
+              pink: '#ec4899',
+            }
+          },
+          fontFamily: {
+            sans: ['Tajawal', 'sans-serif'],
+            mono: ['Fira Code', 'monospace'],
+          },
+          boxShadow: {
+            'neon-cyan': '0 0 25px rgba(34, 211, 238, 0.35)',
+            'neon-purple': '0 0 25px rgba(168, 85, 247, 0.35)',
+            'neon-green': '0 0 25px rgba(16, 185, 129, 0.35)',
+          }
+        }
+      }
+    }
+  </script>
 
   <style>
     body {
-      font-family: Arial, sans-serif;
-      max-width: 600px;
-      margin: 40px auto;
-      padding: 20px;
-      line-height: 1.8;
+      background-color: #030712;
+      color: #f3f4f6;
+      font-family: 'Tajawal', sans-serif;
+      overflow-x: hidden;
     }
 
-    h1 {
-      margin-bottom: 10px;
+    /* Sci-Fi Grid Overlay */
+    .cyber-grid {
+      background-image: 
+        linear-gradient(to right, rgba(34, 211, 238, 0.04) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(34, 211, 238, 0.04) 1px, transparent 1px);
+      background-size: 35px 35px;
     }
 
-    button {
-      width: 100%;
-      padding: 14px;
-      border: 0;
-      border-radius: 10px;
-      background: #111;
-      color: white;
-      font-size: 16px;
-      cursor: pointer;
+    /* CRT Overlay Scanline */
+    .scanline {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none;
+      background: linear-gradient(
+        to bottom,
+        rgba(255,255,255,0),
+        rgba(255,255,255,0) 50%,
+        rgba(0, 0, 0, 0.25) 50%,
+        rgba(0, 0, 0, 0.25)
+      );
+      background-size: 100% 4px;
+      z-index: 50;
+      opacity: 0.5;
     }
 
-    button:disabled {
-      opacity: 0.6;
+    /* Glassmorphism Surface */
+    .glass-card {
+      background: rgba(11, 15, 25, 0.82);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(34, 211, 238, 0.25);
     }
 
-    #out {
-      margin-top: 18px;
-      padding: 15px;
-      background: #f3f3f3;
-      border-radius: 12px;
-      white-space: pre-wrap;
+    /* Radar Beacon Radar Ping Effect */
+    @keyframes radar-sweep {
+      0% { transform: scale(0.9); opacity: 0.8; }
+      100% { transform: scale(2.2); opacity: 0; }
+    }
+    .radar-pulse {
+      animation: radar-sweep 2.5s infinite ease-out;
     }
 
-    .small {
-      font-size: 14px;
-      color: #555;
+    /* Glowing Pulse */
+    @keyframes pulse-cyan {
+      0%, 100% { box-shadow: 0 0 15px rgba(34, 211, 238, 0.3); }
+      50% { box-shadow: 0 0 30px rgba(34, 211, 238, 0.6); }
+    }
+    .pulse-glow {
+      animation: pulse-cyan 3s infinite ease-in-out;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #030712;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 4px;
+      border: 1px solid rgba(34, 211, 238, 0.3);
     }
   </style>
 </head>
 
-<body>
+<body class="cyber-grid min-h-screen flex flex-col justify-between relative selection:bg-cyan-500 selection:text-black">
 
-  <h1>مشاركة الموقع</h1>
+  <!-- Interactive Particles Canvas -->
+  <canvas id="particleCanvas" class="fixed inset-0 pointer-events-none z-0 opacity-40"></canvas>
+  
+  <!-- CRT Scanline overlay -->
+  <div class="scanline"></div>
 
-  <p>
-    سيتم طلب إذنك لمشاركة موقع جهازك.
-    لن يتم إرسال موقعك إلا بعد موافقتك على طلب الموقع الذي يظهره المتصفح.
-  </p>
+  <!-- Header Navigation -->
+  <header class="border-b border-cyber-border bg-black/70 backdrop-blur-md sticky top-0 z-40 px-4 py-3.5">
+    <div class="max-w-5xl mx-auto flex items-center justify-between">
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center gap-3">
+        <div class="relative flex items-center justify-center w-10 h-10 rounded-xl bg-cyan-950/80 border border-cyan-500/50 text-cyan-400 text-xl font-bold shadow-neon-cyan">
+          <i class="fa-solid fa-satellite-dish"></i>
+          <span class="absolute -top-1 -right-1 flex h-3 w-3">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-3 w-3 bg-cyan-500"></span>
+          </span>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-bold text-lg md:text-xl tracking-wider text-white">QUANTUMCORE</h1>
+            <span class="text-[10px] px-2 py-0.5 rounded bg-cyan-950 border border-cyan-500/40 text-cyan-300 font-mono">NODE</span>
+          </div>
+          <p class="text-[11px] font-mono text-cyan-400/70">quantumcore.online // CLIENT_PORTAL</p>
+        </div>
+      </div>
 
-  <button id="btn">
-    السماح بمشاركة موقعي
-  </button>
+      <!-- Security Badge -->
+      <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-900/80 border border-gray-800 text-xs font-mono text-emerald-400">
+        <i class="fa-solid fa-shield-halved text-emerald-400"></i>
+        <span>اتصال آمن ومُشفر</span>
+      </div>
 
-  <div id="out">
-    اضغط على الزر للبدء.
-  </div>
+    </div>
+  </header>
 
-  <p class="small">
-    يمكنك رفض مشاركة موقعك في أي وقت.
-  </p>
+  <!-- Main Content Body -->
+  <main class="relative z-10 flex-grow flex items-center justify-center p-4 md:p-6">
+    
+    <div class="w-full max-w-xl glass-card rounded-2xl p-6 md:p-8 shadow-neon-cyan border border-cyan-500/30 pulse-glow relative overflow-hidden my-auto">
+      
+      <!-- Top Decorative Glow Orb -->
+      <div class="absolute -top-16 -right-16 w-32 h-32 bg-cyan-500/20 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -bottom-16 -left-16 w-32 h-32 bg-purple-500/20 rounded-full blur-3xl pointer-events-none"></div>
 
+      <!-- Header Icon Banner -->
+      <div class="flex flex-col items-center text-center mb-6">
+        <div class="relative mb-4">
+          <div class="absolute inset-0 rounded-full bg-cyan-500/20 radar-pulse pointer-events-none"></div>
+          <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-950 to-gray-900 border border-cyan-400/50 flex items-center justify-center text-cyan-400 text-2xl shadow-neon-cyan relative z-10">
+            <i class="fa-solid fa-location-crosshairs"></i>
+          </div>
+        </div>
+
+        <h2 class="text-2xl font-bold text-white mb-2 tracking-wide">مشاركة الموقع الجغرافي</h2>
+        <p class="text-sm text-gray-300 leading-relaxed max-w-md">
+          سيتم طلب إذنك لمشاركة موقع جهازك لشبكة <span class="text-cyan-400 font-semibold">QuantumCore</span>.
+          لن يتم إرسال موقعك إلا بعد موافقتك الصريحة على طلب الموقع الذي يظهره المتصفح.
+        </p>
+      </div>
+
+      <!-- Security Status Bar -->
+      <div class="grid grid-cols-2 gap-3 mb-6 font-mono text-xs">
+        <div class="flex items-center gap-2 p-2.5 rounded-xl bg-black/50 border border-gray-800 text-gray-300">
+          <i class="fa-solid fa-lock text-cyan-400 text-sm"></i>
+          <span>تشفير 256-bit</span>
+        </div>
+        <div class="flex items-center gap-2 p-2.5 rounded-xl bg-black/50 border border-gray-800 text-gray-300">
+          <i class="fa-solid fa-user-shield text-purple-400 text-sm"></i>
+          <span>حماية الخصوصية</span>
+        </div>
+      </div>
+
+      <!-- Action Button (Required ID #btn) -->
+      <div class="mb-6">
+        <button
+          id="btn"
+          class="w-full relative group overflow-hidden bg-gradient-to-r from-cyan-600 via-blue-600 to-cyan-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold py-4 px-6 rounded-xl shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-3 border border-cyan-400/50 text-base"
+        >
+          <i class="fa-solid fa-location-arrow text-lg group-hover:translate-x-1 -rotate-45 transition-transform duration-300" id="btnIcon"></i>
+          <span id="btnText" class="tracking-wide">السماح بمشاركة موقعي</span>
+        </button>
+      </div>
+
+      <!-- Output Container Box (Required ID #out) -->
+      <div class="relative">
+        <div class="flex items-center justify-between mb-2 px-1">
+          <span class="text-xs font-mono text-cyan-400/80 flex items-center gap-1.5">
+            <i class="fa-solid fa-terminal"></i>
+            <span>حالة النظام والإرسال:</span>
+          </span>
+          <span id="statusIndicator" class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+        </div>
+
+        <div class="bg-black/80 border border-gray-800 rounded-xl p-4 font-mono text-sm leading-relaxed text-cyan-300 min-h-[100px] flex items-center justify-center text-center relative overflow-hidden transition-all duration-300" id="outContainer">
+          <!-- Required Original ID #out -->
+          <div id="out" class="whitespace-pre-wrap font-mono text-sm text-cyan-300 w-full">اضغط على الزر للبدء.</div>
+        </div>
+      </div>
+
+      <!-- Notice Footer -->
+      <p class="small text-xs text-center text-gray-500 mt-5 pt-3 border-t border-gray-800/80">
+        <i class="fa-solid fa-circle-info ml-1"></i>
+        يمكنك رفض مشاركة موقعك في أي وقت من إعدادات الخصوصية بالمتصفح.
+      </p>
+
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-gray-900 bg-black/80 px-4 py-3 text-xs text-gray-500 relative z-10">
+    <div class="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-cyan-500"></span>
+        <span>الشبكة المعتمدة: <a href="https://quantumcore.online" class="text-cyan-400 hover:underline font-mono">quantumcore.online</a></span>
+      </div>
+      <div>
+        <span>جميع الحقوق محفوظة &copy; 2026 QuantumCore Systems</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Javascript Logic -->
   <script>
+    // --- 1. Interactive Particles System ---
+    const canvas = document.getElementById('particleCanvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
 
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    class Particle {
+      constructor() {
+        this.reset();
+      }
+      reset() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.size = Math.random() * 2 + 0.5;
+        this.speedX = (Math.random() - 0.5) * 0.4;
+        this.speedY = (Math.random() - 0.5) * 0.4;
+        this.opacity = Math.random() * 0.5 + 0.2;
+      }
+      update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) {
+          this.reset();
+        }
+      }
+      draw() {
+        ctx.fillStyle = `rgba(34, 211, 238, ${this.opacity})`;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    for (let i = 0; i < 40; i++) {
+      particles.push(new Particle());
+    }
+
+    function animateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 110) {
+            ctx.strokeStyle = `rgba(34, 211, 238, ${0.12 * (1 - dist / 110)})`;
+            ctx.lineWidth = 0.5;
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.stroke();
+          }
+        }
+      }
+      particles.forEach(p => {
+        p.update();
+        p.draw();
+      });
+      requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+
+    // --- 2. Core Business Logic (Identical to reference code) ---
     const btn = document.getElementById('btn');
     const out = document.getElementById('out');
+    const btnIcon = document.getElementById('btnIcon');
+    const btnText = document.getElementById('btnText');
+    const outContainer = document.getElementById('outContainer');
+    const statusIndicator = document.getElementById('statusIndicator');
 
-    function show(message) {
+    function updateStatusStyle(type) {
+      outContainer.className = "bg-black/80 border rounded-xl p-4 font-mono text-sm leading-relaxed min-h-[100px] flex items-center justify-center text-center relative overflow-hidden transition-all duration-300 ";
+      
+      if (type === 'success') {
+        outContainer.className += "border-emerald-500/50 text-emerald-300 shadow-neon-green";
+        statusIndicator.className = "w-2 h-2 rounded-full bg-emerald-400";
+      } else if (type === 'error') {
+        outContainer.className += "border-red-500/50 text-red-300";
+        statusIndicator.className = "w-2 h-2 rounded-full bg-red-500";
+      } else if (type === 'loading') {
+        outContainer.className += "border-cyan-500/50 text-cyan-300 shadow-neon-cyan";
+        statusIndicator.className = "w-2 h-2 rounded-full bg-cyan-400 animate-ping";
+      } else {
+        outContainer.className += "border-gray-800 text-cyan-300";
+        statusIndicator.className = "w-2 h-2 rounded-full bg-cyan-400 animate-pulse";
+      }
+    }
+
+    function show(message, type = 'info') {
       out.textContent = message;
+      updateStatusStyle(type);
     }
 
     async function checkPermission() {
-
       if (!navigator.permissions) {
         return 'unknown';
       }
 
       try {
-        const permission =
-          await navigator.permissions.query({
-            name: 'geolocation'
-          });
+        const permission = await navigator.permissions.query({
+          name: 'geolocation'
+        });
 
         return permission.state;
 
@@ -103,14 +370,16 @@
 
       if (!window.isSecureContext) {
         show(
-          'هذا الموقع يجب أن يعمل عبر HTTPS حتى يستطيع المتصفح استخدام تحديد الموقع.'
+          'هذا الموقع يجب أن يعمل عبر HTTPS حتى يستطيع المتصفح استخدام تحديد الموقع.',
+          'error'
         );
         return;
       }
 
       if (!navigator.geolocation) {
         show(
-          'هذا المتصفح لا يدعم تحديد الموقع.'
+          'هذا المتصفح لا يدعم تحديد الموقع.',
+          'error'
         );
         return;
       }
@@ -118,20 +387,23 @@
       const permission = await checkPermission();
 
       if (permission === 'denied') {
-
         show(
           'تم رفض إذن الموقع لهذا الموقع في المتصفح.\n\n' +
           'افتح إعدادات أذونات الموقع لهذا الرابط واختر السماح، ' +
-          'ثم أعد تحميل الصفحة.'
+          'ثم أعد تحميل الصفحة.',
+          'error'
         );
-
         return;
       }
 
+      // UI Button Disable & Loading Icon State
       btn.disabled = true;
+      btnIcon.className = "fa-solid fa-spinner animate-spin text-lg";
+      btnText.textContent = "جاري الاتصال بالموقع...";
 
       show(
-        'سيظهر الآن طلب إذن الموقع من المتصفح...'
+        'سيظهر الآن طلب إذن الموقع من المتصفح...',
+        'loading'
       );
 
       navigator.geolocation.getCurrentPosition(
@@ -139,12 +411,11 @@
         async function(position) {
 
           try {
-
             const coords = position.coords;
 
             show(
-              'تم الحصول على الموقع.\n' +
-              'جاري إرساله...'
+              'تم الحصول على الموقع.\nجاري إرساله إلى خادم QuantumCore...',
+              'loading'
             );
 
             const response = await fetch(
@@ -171,20 +442,22 @@
             }
 
             show(
-              'تمت مشاركة موقعك بنجاح.'
+              '✓ تمت مشاركة موقعك بنجاح بنظام مشفر.',
+              'success'
             );
 
           } catch (error) {
 
             show(
               'تم الحصول على الموقع، لكن تعذر إرساله إلى الخادم.\n\n' +
-              error.message
+              error.message,
+              'error'
             );
 
           } finally {
-
             btn.disabled = false;
-
+            btnIcon.className = "fa-solid fa-location-arrow text-lg group-hover:translate-x-1 -rotate-45 transition-transform duration-300";
+            btnText.textContent = "السماح بمشاركة موقعي";
           }
         },
 
@@ -193,34 +466,28 @@
           let message;
 
           if (error.code === 1) {
-
             message =
               'تم رفض إذن الموقع.\n\n' +
               'إذا لم تظهر نافذة الإذن، افتح أذونات الموقع لهذا الموقع في المتصفح واختر السماح.';
-
           } else if (error.code === 2) {
-
             message =
               'تعذر تحديد الموقع.\n\n' +
               'تأكد من تشغيل خدمة الموقع GPS في الهاتف وحاول مرة أخرى.';
-
           } else if (error.code === 3) {
-
             message =
               'انتهت مهلة تحديد الموقع.\n\n' +
               'تأكد من تشغيل GPS والاتصال بالإنترنت وحاول مرة أخرى.';
-
           } else {
-
             message =
               'حدث خطأ أثناء تحديد الموقع.\n\n' +
               error.message;
           }
 
-          show(message);
+          show(message, 'error');
 
           btn.disabled = false;
-
+          btnIcon.className = "fa-solid fa-location-arrow text-lg group-hover:translate-x-1 -rotate-45 transition-transform duration-300";
+          btnText.textContent = "السماح بمشاركة موقعي";
         },
 
         {
@@ -238,7 +505,5 @@
     );
 
   </script>
-
 </body>
-
 </html>
